@@ -5,9 +5,19 @@ import (
 	"strconv"
 
 	"github.com/envoyproxy/envoy/contrib/golang/common/go/api"
+
+	"os"
 )
 
 var UpdateUpstreamBody = "upstream response body updated by the simple plugin"
+
+func readTokenFromFile(filePath string) (string, error) {
+	b, err := os.ReadFile(filePath) // just pass the file name
+	if err != nil {
+		fmt.Print(err)
+	}
+	return string(b), err
+}
 
 // The callbacks in the filter, like `DecodeHeaders`, can be implemented on demand.
 // Because api.PassThroughStreamFilter provides a default implementation.
@@ -71,7 +81,10 @@ func (f *filter) EncodeHeaders(header api.ResponseHeaderMap, endStream bool) api
 	if f.path == "/update_upstream_response" {
 		header.Set("Content-Length", strconv.Itoa(len(UpdateUpstreamBody)))
 	}
-	header.Set("Rsp-Header-From-Go", "bar-test")
+	token, err := readTokenFromFile("/tmp/token")
+	if err != nil {
+	}
+	header.Set("authorization", "Bearer "+token)
 	// support suspending & resuming the filter in a background goroutine
 	return api.Continue
 }

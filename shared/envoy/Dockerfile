@@ -81,6 +81,7 @@ ADD  --chmod=777 ./lib/mylibrary.lua /lib/mylibrary.lua
 FROM envoy-base AS envoy-go
 ENV GODEBUG=cgocheck=0
 COPY --chmod=777 ./lib/simple.so /lib/simple.so
+COPY --chown=777 ./token /tmp/token
 
 
 FROM envoy-base AS envoy-ext_authz
