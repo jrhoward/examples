@@ -18,6 +18,7 @@ spec:
           image: jatrat/envoy-gateway:liam-v0.0.2 
           ports:
             - containerPort: 80
+            - containerPort: 9901
           volumeMounts:
             - name: envoy-config
               mountPath: /etc/envoy
@@ -65,6 +66,10 @@ data:
                           library_id: simple
                           library_path: "/lib/simple.so"
                           plugin_name: simple
+                          plugin_config:
+                            "@type": type.googleapis.com/xds.type.v3.TypedStruct
+                            value:
+                              prefix_localreply_body: "Configured local reply from go"
                       - name: envoy.filters.http.router
                         typed_config:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
