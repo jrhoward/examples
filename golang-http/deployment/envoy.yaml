@@ -17,7 +17,7 @@ spec:
         - name: envoy
           image: jatrat/envoy-gateway:liam-v0.0.2 
           ports:
-            - containerPort: 80
+            - containerPort: 443
             - containerPort: 9901
           volumeMounts:
             - name: envoy-config
@@ -41,7 +41,7 @@ data:
         - address:
             socket_address:
               address: 0.0.0.0
-              port_value: 80
+              port_value: 443
           filter_chains:
             - filters:
                 - name: envoy.filters.network.http_connection_manager
@@ -169,10 +169,10 @@ metadata:
   namespace: envoy 
 spec: 
   ports: 
-  - name: 80-80 
-    port: 80 
+  - name: 443-443
+    port: 443
     protocol: TCP 
-    targetPort: 80 
+    targetPort: 443
   selector: 
     app: envoy 
   type: ClusterIP 
