@@ -151,7 +151,7 @@ data:
                 address:
                   socket_address:
                     address: httpbin.org
-                    port_value: 80
+                    port_value: 443
     admin:
       address:
         socket_address:
