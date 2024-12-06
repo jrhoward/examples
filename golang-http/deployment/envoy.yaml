@@ -1,3 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: envoy
+  name: envoy
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,10 +24,11 @@ spec:
     spec:
       containers:
         - name: envoy
-          image: jatrat/envoy-gateway:liam-v0.0.2 
+          image: jatrat/envoy-gateway:v0.0.13
+          command: ["/usr/local/bin/envoy"]
+          args: ["--log-level", "debug" , "-c", "/etc/envoy/envoy.yaml"]
           ports:
-            - containerPort: 443
-            - containerPort: 9901
+            - containerPort: 8443
           volumeMounts:
             - name: envoy-config
               mountPath: /etc/envoy
@@ -41,7 +51,7 @@ data:
         - address:
             socket_address:
               address: 0.0.0.0
-              port_value: 443
+              port_value: 8443
           filter_chains:
             - filters:
                 - name: envoy.filters.network.http_connection_manager
@@ -51,13 +61,13 @@ data:
                     route_config:
                       name: all
                       virtual_hosts:
-                        - name: egress_service_http_http
+                        - name: upstream
                           domains:
                             - '*'
                           routes:
                             - match: { prefix: "/" }
                               route:
-                                cluster: egress_service_http_http
+                                cluster: upstream
                                 prefix_rewrite: "/"
                     http_filters:
                       - name: envoy.filters.http.golang
@@ -69,10 +79,23 @@ data:
                           plugin_config:
                             "@type": type.googleapis.com/xds.type.v3.TypedStruct
                             value:
-                              prefix_localreply_body: "Configured local reply from go"
+                              token_filepath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
                       - name: envoy.filters.http.router
                         typed_config:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                          upstream_http_filters:
+                          - name: upstream_header
+                            typed_config:
+                              '@type': type.googleapis.com/envoy.extensions.filters.http.header_mutation.v3.HeaderMutation
+                              mutations:
+                                request_mutations:
+                                  append:
+                                    header:
+                                      key: "authorization"
+                                      value: "b"
+                          - name: envoy.filters.http.upstream_codec
+                            typed_config:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.upstream_codec.v3.UpstreamCodec
               transport_socket:
                 name: envoy.transport_sockets.tls
                 typed_config:
@@ -137,14 +160,18 @@ data:
                           ohhtprnQQAddfjHP7rh2LGt+irFzhdXXQ1ybGaGM9D764KUNCXLuwdly0vzXU4HU
                           q5sGxGrC1RECGB5Zwx2S2ZY=
                           -----END PRIVATE KEY-----
-
       clusters:
-      - name: egress_service_http_http
-        connect_timeout: 2s
+      - name: upstream
+        http2_protocol_options: {}
+        connect_timeout: 
+          seconds: 10
         type: STRICT_DNS
-        lb_policy: ROUND_ROBIN
+        transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
         load_assignment:
-          cluster_name: egress_service_http_http
+          cluster_name: upstream
           endpoints:
           - lb_endpoints:
             - endpoint:
@@ -152,11 +179,13 @@ data:
                   socket_address:
                     address: httpbin.org
                     port_value: 443
+        lb_policy: ROUND_ROBIN
     admin:
       address:
         socket_address:
           address: 0.0.0.0
           port_value: 9901
+
 
 ---
 
@@ -169,10 +198,10 @@ metadata:
   namespace: envoy 
 spec: 
   ports: 
-  - name: 443-443
-    port: 443
+  - name: 8443-8443
+    port: 8443
     protocol: TCP 
-    targetPort: 443
+    targetPort: 8443
   selector: 
     app: envoy 
   type: ClusterIP 

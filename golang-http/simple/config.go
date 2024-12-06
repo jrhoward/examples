@@ -18,7 +18,7 @@ func init() {
 }
 
 type config struct {
-	echoBody string
+	tokenPath string
 	// other fields
 }
 
@@ -35,14 +35,14 @@ func (p *parser) Parse(any *anypb.Any, callbacks api.ConfigCallbackHandler) (int
 
 	v := configStruct.Value
 	conf := &config{}
-	prefix, ok := v.AsMap()["prefix_localreply_body"]
+	prefix, ok := v.AsMap()["token_filepath"]
 	if !ok {
-		return nil, errors.New("missing prefix_localreply_body")
+		return nil, errors.New("missing token_filepath")
 	}
 	if str, ok := prefix.(string); ok {
-		conf.echoBody = str
+		conf.tokenPath = str
 	} else {
-		return nil, fmt.Errorf("prefix_localreply_body: expect string while got %T", prefix)
+		return nil, fmt.Errorf("token_filepath: expect string while got %T", prefix)
 	}
 	return conf, nil
 }
@@ -54,8 +54,8 @@ func (p *parser) Merge(parent interface{}, child interface{}) interface{} {
 
 	// copy one, do not update parentConfig directly.
 	newConfig := *parentConfig
-	if childConfig.echoBody != "" {
-		newConfig.echoBody = childConfig.echoBody
+	if childConfig.tokenPath != "" {
+		newConfig.tokenPath = childConfig.tokenPath
 	}
 	return &newConfig
 }

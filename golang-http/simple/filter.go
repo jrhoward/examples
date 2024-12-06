@@ -9,14 +9,24 @@ import (
 	"os"
 )
 
-var UpdateUpstreamBody = "upstream response body updated by the simple plugin"
+var token_filepath = ""
 
-func readTokenFromFile(filePath string) (string, error) {
-	b, err := os.ReadFile(filePath) // just pass the file name
+func (f *filter) readTokenFromFile() api.StatusType {
+	f.callbacks.Log(api.Debug, f.config.tokenPath)
+	b, err := os.ReadFile(f.config.tokenPath)
+
 	if err != nil {
 		fmt.Print(err)
+	} else {
+		fmt.Print(b)
 	}
-	return string(b), err
+
+	// m := make(map[string][]string)
+	// m["authorization"] = string(b)
+
+	f.callbacks.DecoderFilterCallbacks().SendLocalReply(200, "string(b)", nil, 0, "")
+	//DecoderFilterCallbacks().SendLocalReply(200, "string(b)", nil, 0, "")
+	return api.Continue
 }
 
 // The callbacks in the filter, like `DecodeHeaders`, can be implemented on demand.
@@ -25,26 +35,19 @@ type filter struct {
 	api.PassThroughStreamFilter
 
 	callbacks api.FilterCallbackHandler
-	path      string
 	config    *config
 }
 
-func (f *filter) sendLocalReplyInternal() api.StatusType {
-	body := fmt.Sprintf("%s, path: %s\r\n", f.config.echoBody, f.path)
-	f.callbacks.DecoderFilterCallbacks().SendLocalReply(200, body, nil, 0, "")
-	// Remember to return LocalReply when the request is replied locally
-	return api.LocalReply
-}
+// func (f *filter) sendLocalReplyInternal() api.StatusType {
+// 	body := fmt.Sprintf("%s, path: %s\r\n", f.config.tokenPath)
+// 	f.callbacks.DecoderFilterCallbacks().SendLocalReply(200, body, nil, 0, "")
+// 	// Remember to return LocalReply when the request is replied locally
+// 	return api.LocalReply
+// }
 
 // Callbacks which are called in request path
 // The endStream is true if the request doesn't have body
 func (f *filter) DecodeHeaders(header api.RequestHeaderMap, endStream bool) api.StatusType {
-	f.path, _ = header.Get(":path")
-	api.LogDebugf("get path %s", f.path)
-
-	if f.path == "/localreply_by_config" {
-		return f.sendLocalReplyInternal()
-	}
 	return api.Continue
 	/*
 		// If the code is time-consuming, to avoid blocking the Envoy,
@@ -78,27 +81,13 @@ func (f *filter) DecodeTrailers(trailers api.RequestTrailerMap) api.StatusType {
 // Callbacks which are called in response path
 // The endStream is true if the response doesn't have body
 func (f *filter) EncodeHeaders(header api.ResponseHeaderMap, endStream bool) api.StatusType {
-	if f.path == "/update_upstream_response" {
-		header.Set("Content-Length", strconv.Itoa(len(UpdateUpstreamBody)))
-	}
-	token, err := readTokenFromFile("/tmp/token")
-	if err != nil {
-	}
-	header.Set("authorization", "Bearer "+token)
+	return f.readTokenFromFile()
 	// support suspending & resuming the filter in a background goroutine
-	return api.Continue
 }
 
 // EncodeData might be called multiple times during handling the response body.
 // The endStream is true when handling the last piece of the body.
 func (f *filter) EncodeData(buffer api.BufferInstance, endStream bool) api.StatusType {
-	if f.path == "/update_upstream_response" {
-		if endStream {
-			buffer.SetString(UpdateUpstreamBody)
-		} else {
-			buffer.Reset()
-		}
-	}
 	// support suspending & resuming the filter in a background goroutine
 	return api.Continue
 }
@@ -135,6 +124,7 @@ func (f *filter) OnLog(reqHeader api.RequestHeaderMap, reqTrailer api.RequestTra
 // OnLogDownstreamStart is called when HTTP Connection Manager filter receives a new HTTP request
 // (required the corresponding access log type is enabled)
 func (f *filter) OnLogDownstreamStart(reqHeader api.RequestHeaderMap) {
+
 	// also support kicking off a goroutine here, like OnLog.
 }
 
