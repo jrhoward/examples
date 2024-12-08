@@ -27,7 +27,7 @@ docker push jatrat/envoy-gateway:v0.0.1
 
 kubectl get pods -n envoy -o wide
 
-curl -v localhost:8881/headers
+curl -v https://localhost:8443/headers -k
 
 
 NEWTAG="v0.0.6" docker-compose -f docker-compose-go.yaml run --rm go_plugin_compile && docker-compose up --build -d && sleep 5 && docker-compose ps && docker-compose stop && docker-compose rm && docker tag golang-http-proxy  jatrat/envoy-gateway:${NEWTAG} && docker push jatrat/envoy-gateway:${NEWTAG}
@@ -53,3 +53,6 @@ kubectl port-forward  svc/envoy 8881:80 -n envoy
 
 curl -v localhost:8881/headers
 ```
+
+
+https://ahmet.im/blog/kubernetes-inotify/

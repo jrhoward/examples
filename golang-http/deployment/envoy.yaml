@@ -7,6 +7,13 @@ metadata:
 
 ---
 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: envoy
+  namespace: envoy
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,24 +38,40 @@ spec:
             - containerPort: 8443
           volumeMounts:
             - name: envoy-config
-              mountPath: /etc/envoy-config
-            - name: envoy-lds
-              mountPath: /tmp/envoy-lds/
+              mountPath: /etc/envoy-config/
+            - name: dynamic-data
+              mountPath: /var/lib/envoy/
+        - name: file-watcher
+          image: jatrat/file-watch:v0.0.14
+          command: ["/app"]
+          volumeMounts:
+            - name: envoy-lds-tpl
+              mountPath: /etc/envoy/envoy-lds-tpl/
+            - name: dynamic-data
+              mountPath: /var/lib/envoy/
+          env:
+          - name: ENVOY_LDS_TPL_PATH
+            value: "/etc/envoy/envoy-lds-tpl/envoy-lds.tpl"
+          - name: ENVOY_LDS_OUT_PATH
+            value: "/var/lib/envoy/envoy-lds.yaml"
+
       volumes:
         - name: envoy-config
           configMap:
             name: envoy-config
-        - name: envoy-lds
+        - name: envoy-lds-tpl
           configMap:
-            name: envoy-lds
+            name: envoy-lds-tpl
+        - name: dynamic-data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: envoy-lds
+  name: envoy-lds-tpl
   namespace: envoy
 data:
-  envoy-lds.yaml: |
+  envoy-lds.tpl: |
     resources:
         - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
           name: listener_0
@@ -86,7 +109,7 @@ data:
                                                       append:
                                                           header:
                                                               key: "authorization"
-                                                              value: "atoken"
+                                                              value: {{.Token}}
                                         - name: envoy.filters.http.upstream_codec
                                           typed_config:
                                               "@type": type.googleapis.com/envoy.extensions.filters.http.upstream_codec.v3.UpstreamCodec
@@ -169,7 +192,7 @@ data:
      id: upstream
    dynamic_resources:
       lds_config:
-        path: /tmp/envoy-lds/envoy-lds.yaml
+        path: /var/lib/envoy/envoy-lds.yaml
    static_resources:
       clusters:
       - name: upstream

@@ -7,6 +7,7 @@ services:
       target: golang-base
     command: >
       bash -c "
+      ls -a &&
       mkdir -p lib
       && cd simple
       && go build -o ../lib/simple.so -buildmode=c-shared ."
@@ -15,4 +16,4 @@ services:
     - GOFLAGS=-buildvcs=false
     - HOME=/tmp
     volumes:
-    - .:/source
+    - .:/source:z
