@@ -4,35 +4,53 @@ to the [Envoy docs](https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/
 
 ```sh
 
+brew install docker
+brew install colima
+brew install k3d
 
-brew services colima restart
+k3d cluster create qadi
 
-k3d cluster stop qdos
-K3D_FIX_DNS=0 k3d cluster start qdos
+# either start or restart
+brew services colima restart|start
 
+k3d cluster stop qadi
+K3D_FIX_DNS=0 k3d cluster start qadi
+
+
+# Build envoy !! note may not be needed any more
 docker-compose -f docker-compose-go.yaml run --rm go_plugin_compile
 
 
-docker-compose pull
-docker-compose up --build -d
-docker-compose ps
-
-docker-compose stop
-docker-compose rm
-
+# log into docker to build the and push images
 
 dockler login
-docker tag golang-http-proxy  jatrat/envoy-gateway:v0.0.1
-docker push jatrat/envoy-gateway:v0.0.1
 
-kubectl get pods -n envoy -o wide
+# build and push where x is the patch version of MAJOR.MINOR.PATCH
+./build-script.sh x
+
+# build and push file-watch where x is the patch version of MAJOR.MINOR.PATCH
+
+./file-watch/build-script.sh x
+
+
+# update the deployment versions in deployment/envoy.yaml
+
+kubectl scale deployment envoy -n envoy --replicas 0
+
+kubectl apply -f deployment/envoy.yaml
+
+# port forward service end point to local host
+
+kubectl port-forward -n envoy svc/envoy 9443:8443
+
+# test
 
 curl -v https://localhost:8443/headers -k
 
 
-NEWTAG="v0.0.6" docker-compose -f docker-compose-go.yaml run --rm go_plugin_compile && docker-compose up --build -d && sleep 5 && docker-compose ps && docker-compose stop && docker-compose rm && docker tag golang-http-proxy  jatrat/envoy-gateway:${NEWTAG} && docker push jatrat/envoy-gateway:${NEWTAG}
 
-kubectl set image -f deployment/envoy.yaml envoy=jatrat/envoy-gateway:${NEWTAG} --local -o yaml
+
+
 
 
 ```
