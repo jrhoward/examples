@@ -1,31 +1,40 @@
 To learn about this sandbox and for instructions on how to run it please head over
 to the [Envoy docs](https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/golang.html).
 
+For local devevelopment purposes VSCode is easy to use and has some good extension for K8s
+
+Install:
+
+- Microsoft Kubernetes extension
+- Microsft Docker extension
+- Team google Go extension
+- REd Hat Yaml extension
+
 
 ```sh
-
+brew install golang
 brew install docker
 brew install colima
 brew install k3d
+brew install kubectl
+brew install helm
 
-k3d cluster create qadi
+# either start or restart / docker will run inside this colima linux vm
+brew services colima restart| start
 
-# either start or restart
-brew services colima restart|start
 
+# k3d will run inside
+K3D_FIX_DNS=0 k3d cluster create qadi
+
+# other commeds 
 k3d cluster stop qadi
-K3D_FIX_DNS=0 k3d cluster start qadi
-
-
-# Build envoy !! note may not be needed any more
-docker-compose -f docker-compose-go.yaml run --rm go_plugin_compile
-
+k3d cluster start qadi
 
 # log into docker to build the and push images
 
 dockler login
 
-# build and push where x is the patch version of MAJOR.MINOR.PATCH
+# build and push envoy where x is the patch version of MAJOR.MINOR.PATCH
 ./build-script.sh x
 
 # build and push file-watch where x is the patch version of MAJOR.MINOR.PATCH
@@ -46,11 +55,6 @@ kubectl port-forward -n envoy svc/envoy 9443:8443
 # test
 
 curl -v https://localhost:8443/headers -k
-
-
-
-
-
 
 
 ```
