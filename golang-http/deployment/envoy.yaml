@@ -53,10 +53,10 @@ spec:
           command: ["/app"]
           resources:
             requests:
-              memory: "28Mi"
+              memory: "16Mi"
               cpu: "20m"
             limits:
-              memory: "28Mi"
+              memory: "32Mi"
               cpu: "40m"
           volumeMounts:
             - name: envoy-lds-tpl
