@@ -8,12 +8,13 @@ Install:
 - Microsoft Kubernetes extension
 - Microsft Docker extension
 - Team google Go extension
-- REd Hat Yaml extension
+- Rdd Hat Yaml extension
 
 
 ```sh
 brew install golang
 brew install docker
+brew install docker-compose
 brew install colima
 brew install k3d
 brew install kubectl
@@ -22,13 +23,12 @@ brew install helm
 # either start or restart / docker will run inside this colima linux vm
 brew services colima restart| start
 
-
 # k3d will run inside
 K3D_FIX_DNS=0 k3d cluster create qadi
 
 # other commeds 
 k3d cluster stop qadi
-k3d cluster start qadi
+K3D_FIX_DNS=0 k3d cluster start qadi
 
 # log into docker to build the and push images
 

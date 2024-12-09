@@ -15,7 +15,7 @@ docker build -t file-watch .
 docker tag file-watch  jatrat/file-watch:v0.0.$1
 docker push jatrat/file-watch:v0.0.$1
 exit 0
-kubectl apply -f deployment/envoy.yaml 
-sleep 10
+#kubectl apply -f deployment/envoy.yaml 
+#sleep 10
 
-kubectl get pods -n envoy -o wide
+#kubectl get pods -n envoy -o wide
