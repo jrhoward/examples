@@ -54,7 +54,7 @@ kubectl port-forward -n envoy svc/envoy 9443:8443
 
 # test
 
-curl -v https://localhost:8443/headers -k
+curl -v https://localhost:9443/headers -k
 
 
 ```
