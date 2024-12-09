@@ -10,8 +10,32 @@ Install:
 - Team google Go extension
 - Rdd Hat Yaml extension
 
+## Quickstart
+
+Run `bash quickstart.sh`. Before running it is recommended to clean up any dangling namespaces/deployments/containers:
 
 ```sh
+k3d cluster ls
+k3d cluster delete <cluster name>
+docker compose ls
+docker compose down
+```
+
+The script will perform checks for the following packages installed:
+
+- golang
+- docker
+- docker-compose
+- colima
+- k3d
+- kubectl
+- helm
+
+
+## Troubleshooting
+
+```sh
+# install packages via brew
 brew install golang
 brew install docker
 brew install docker-compose

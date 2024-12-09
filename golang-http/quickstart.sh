@@ -1,23 +1,33 @@
 #!/usr/bin/env bash
-
 export K3D_FIX_DNS=0
 
+set -e
+
+BBlack='\033[1;30m'
 BBlue='\033[1;34m'
+BGreen='\033[1;32m'
 nc='\033[0m'
 
-echo "Checking deps..."
-k3d --version || (printf "Please install k3d:\nbrew install k3d\n"; exit 1)
-docker --version || (printf "Please install docker:\nbrew install docker\n"; exit 1)
-docker-compose --version || (printf "Please install docker-compose:\nbrew install docker-compose\n"; exit 1)
-colima --version || (printf "Please install colima:\nbrew install colima\n"; exit 1)
-kubectl version || (printf "Please install kubectl:\nbrew install kubectl\n"; exit 1)
-helm version || (printf "Please install helm:\nbrew install helm\n"; exit 1)
-go version || (printf "Please install golang:\nbrew install golang\n"; exit 1)
-echo "Checking for existing clusters..."
+echo -e "${BBlack}Checking deps...${nc}"
+k3d --version &> /dev/null || (printf "Please install k3d:\n\nbrew install k3d\n"; exit 1)
+docker --version &> /dev/null || (printf "Please install docker:\n\nbrew install docker\n"; exit 1)
+docker-compose --version &> /dev/null || (printf "Please install docker-compose:\n\nbrew install docker-compose\n"; exit 1)
+colima --version &> /dev/null || (printf "Please install colima:\n\nbrew install colima\n"; exit 1)
+kubectl version &> /dev/null || (printf "Please install kubectl:\n\nbrew install kubectl\n"; exit 1)
+helm version &> /dev/null || (printf "Please install helm:\n\nbrew install helm\n"; exit 1)
+go version &> /dev/null || (printf "Please install golang:\n\nbrew install golang\n"; exit 1)
+echo -e "${BGreen}OK${nc}"
 echo
+
+echo -e "${BBlack}Checking docker colima context status...${nc}"
+(docker info | grep colima) &> /dev/null || (printf "Docker engine is not using colima. Please run:\ncolima start\n"; exit 1)
+echo -e "${BGreen}OK${nc}"
+echo
+
+echo -e "${BBlack}Checking for existing clusters...${nc}"
 k3d cluster ls >&1
 echo
-echo -e "Create a ${BBlue}new${nc} k3d cluster? [y/N] "
+echo -e "${BBlack}Create a ${BBlue}new${BBlack} k3d cluster?${nc} [y/N] "
 read -r ans
 case $ans in
     [yY])
@@ -29,7 +39,7 @@ case $ans in
 esac
 
 echo
-echo "Checking for existing containers..."
+echo -e "${BBlack}Checking for existing containers...${nc}"
 echo
 docker compose ps >&1
 echo
