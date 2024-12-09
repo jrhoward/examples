@@ -34,6 +34,13 @@ spec:
           image: jatrat/envoy-gateway:v0.0.13
           command: ["/usr/local/bin/envoy"]
           args: ["--log-level", "debug" , "-c", "/etc/envoy-config/envoy.yaml"]
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "200m"
+            limits:
+              memory: "64Mi"
+              cpu: "200m"
           ports:
             - containerPort: 8443
           volumeMounts:
@@ -44,6 +51,13 @@ spec:
         - name: file-watcher
           image: jatrat/file-watch:v0.0.14
           command: ["/app"]
+          resources:
+            requests:
+              memory: "28Mi"
+              cpu: "20m"
+            limits:
+              memory: "28Mi"
+              cpu: "40m"
           volumeMounts:
             - name: envoy-lds-tpl
               mountPath: /etc/envoy/envoy-lds-tpl/
@@ -54,7 +68,6 @@ spec:
             value: "/etc/envoy/envoy-lds-tpl/envoy-lds.tpl"
           - name: ENVOY_LDS_OUT_PATH
             value: "/var/lib/envoy/envoy-lds.yaml"
-
       volumes:
         - name: envoy-config
           configMap:
