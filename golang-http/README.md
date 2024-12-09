@@ -78,3 +78,10 @@ curl -v localhost:8881/headers
 
 
 https://ahmet.im/blog/kubernetes-inotify/
+
+
+## TODO
+
+1. Validate JWT coming from down stream, can use configuration for this. See Raman's example
+2. Implment logic for routing based on 3 variables, region, ? and model ( eg chatgpt or claude), can use Goloang templates if we can unit test them
+3. Parse response body from LLM and expose values as metrics for prometheus
