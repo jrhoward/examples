@@ -115,10 +115,10 @@ data:
                                               - name: x-llm-model 
                                                 exact_match: "chat-gpt-4o" 
                                           route:
-                                              cluster: otherStream
+                                              cluster: upstream
                                         - match: { prefix: "/" }
                                           route:
-                                              cluster: upstream
+                                              cluster: otherStream
                                               prefix_rewrite: "/"
                           http_filters:
                               - name: envoy.filters.http.router

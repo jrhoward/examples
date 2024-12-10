@@ -111,10 +111,10 @@ echo "Finished."
 exit 0
 
 #To match the first condition
-curl -H "x-llm-region: au-east-2" -H "x-llm-providor: Azure" -H "x-llm-model: chat-gpt-4o" https://localhost:9443 -k -v
+curl -H "x-llm-region: au-east-2" -H "x-llm-providor: Azure" -H "x-llm-model: chat-gpt-4o" https://localhost:9443/headers -k -v
 
 #Curl with wrong headers that don't match first condition
 curl -H "x-llm-region: au-east-2" -H "x-llm-providor: AWS" -H "x-llm-model: chat-gpt-4o" https://localhost:9443 -k -v
 
 #Curl with no headers specified
-curl -v https://localhost:9443/headers -k
+curl -v https://localhost:9443 -k
