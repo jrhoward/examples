@@ -47,7 +47,7 @@ brew install helm
 # either start or restart / docker will run inside this colima linux vm
 brew services colima restart| start
 
-# k3d will run inside
+# k3d will run inside, 
 K3D_FIX_DNS=0 k3d cluster create qadi
 
 # other commeds 
@@ -94,10 +94,10 @@ https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol
 kubectl apply -f envoy.yaml 
 kubectl rollout restart deployment/envoy -n envoy
 kubectl describe pod  -n envoy
-kubectl port-forward  svc/envoy 8881:80 -n envoy
+kubectl port-forward  svc/envoy 9443:8443 -n envoy
 
 
-curl -v localhost:8881/headers
+curl -v localhost:9443/headers
 ```
 
 
@@ -106,6 +106,6 @@ https://ahmet.im/blog/kubernetes-inotify/
 
 ## TODO
 
-1. Validate JWT coming from down stream, can use configuration for this. See Raman's example
-2. Implment logic for routing based on 3 variables, region, ? and model ( eg chatgpt or claude), can use Goloang templates if we can unit test them
-3. Parse response body from LLM and expose values as metrics for prometheus
+1. Validate JWT coming from down stream, can use configuration for this. See Raman's example | config
+2. Implment logic for routing based on 3 variables, region, provider and model ( eg chatgpt or claude, azure ), can use Goloang templates if we can unit test them | filters or multiple hosts
+3. Parse response body from LLM and expose values as metrics for prometheus | Stats golang filter
