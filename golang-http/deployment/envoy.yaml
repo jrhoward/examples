@@ -242,7 +242,7 @@ metadata:
   labels: 
     app: envoy 
   name: envoy 
-  namespace: us-east-1-chatgpt 
+  namespace: envoy
 spec: 
   ports: 
   - name: 8443-8443
@@ -253,6 +253,23 @@ spec:
     app: envoy 
   type: ClusterIP 
 
+---
+apiVersion: v1 
+kind: Service 
+metadata: 
+  labels: 
+    app: envoy 
+  name: envoy-2
+  namespace: envoy
+spec: 
+  ports: 
+  - name: 8443-8443
+    port: 8443
+    protocol: TCP 
+    targetPort: 8443
+  selector: 
+    app: envoy 
+  type: ClusterIP 
 ---
 
 apiVersion: v1 
