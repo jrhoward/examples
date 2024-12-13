@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: envoy
-          image: jatrat/envoy-gateway:v0.0.13
+          image: jatrat/envoy-gateway:dev-0.0.1
           command: ["/usr/local/bin/envoy"]
           args: ["--log-level", "debug" , "-c", "/etc/envoy-config/envoy.yaml"]
           resources:
@@ -49,7 +49,7 @@ spec:
             - name: dynamic-data
               mountPath: /var/lib/envoy/
         - name: file-watcher
-          image: jatrat/file-watch:v0.0.14
+          image: jatrat/file-watch:dev-0.0.1
           command: ["/app"]
           resources:
             requests:
@@ -105,6 +105,10 @@ data:
                                     domains:
                                         - "*"
                                     routes:
+                                        - match: { prefix: "/headers" }
+                                          route:
+                                              cluster: bin
+
                                         - match: { prefix: "/" }
                                           route:
                                               cluster: upstream
@@ -208,6 +212,26 @@ data:
         path: /var/lib/envoy/envoy-lds.yaml
    static_resources:
       clusters:
+      - name: bin
+        http2_protocol_options: {}
+        connect_timeout: 
+          seconds: 10
+        type: STRICT_DNS
+        transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        load_assignment:
+          cluster_name: bin
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: httpbin.org
+                    port_value: 443
+        lb_policy: ROUND_ROBIN
+
       - name: upstream
         http2_protocol_options: {}
         connect_timeout: 
@@ -224,9 +248,10 @@ data:
             - endpoint:
                 address:
                   socket_address:
-                    address: httpbin.org
+                    address: neverssl.com
                     port_value: 443
         lb_policy: ROUND_ROBIN
+
    admin:
       address:
         socket_address:
@@ -242,7 +267,7 @@ metadata:
   labels: 
     app: envoy 
   name: envoy 
-  namespace: us-east-1-chatgpt 
+  namespace: envoy
 spec: 
   ports: 
   - name: 8443-8443
