@@ -1,0 +1,71 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: envoy-egress-gateway-policy
+spec:
+  endpointSelector: 
+    matchLabels:
+      app: envoy
+  ingress:
+    - fromEntities:
+        - cluster
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toFQDNs:
+        - matchName: httpbin.org
+        - matchName: neverssl.com
+      toPorts:
+        - ports:
+            - port: "443"
+        - ports:
+            - port: "80"
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: tenant-to-envoy-egress-gateway-policy
+spec:
+  endpointSelector: 
+    matchLabels:
+      app: tenant
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: envoy
+            io.kubernetes.pod.namespace: envoy
+      toPorts:
+        - ports:
+            - port: "443"
+        - ports:
+            - port: "80"
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            app: envoy
+            io.kubernetes.pod.namespace: envoy
+      toPorts:
+        - ports:
+            - port: "443"
+        - ports:
+            - port: "80"
