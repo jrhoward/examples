@@ -101,18 +101,21 @@ data:
                           route_config:
                               name: all
                               virtual_hosts:
-                                  - name: upstream
+                                  - name: envoy
                                     domains:
-                                        - "*"
+                                        - "envoy.envoy.svc.cluster.local:8443"
                                     routes:
-                                        - match: { prefix: "/headers" }
-                                          route:
-                                              cluster: bin
-
                                         - match: { prefix: "/" }
                                           route:
-                                              cluster: upstream
-                                              prefix_rewrite: "/"
+                                              cluster: envoy
+                                  - name: app1
+                                    domains:
+                                        - "app1.envoy.svc.cluster.local:8443"
+                                    routes:
+                                        - match: { prefix: "/" }
+                                          route:
+                                              cluster: app1
+                                              prefix_rewrite: "/headers"
                           http_filters:
                               - name: envoy.filters.http.router
                                 typed_config:
@@ -212,7 +215,7 @@ data:
         path: /var/lib/envoy/envoy-lds.yaml
    static_resources:
       clusters:
-      - name: bin
+      - name: envoy
         http2_protocol_options: {}
         connect_timeout: 
           seconds: 10
@@ -222,7 +225,7 @@ data:
           typed_config:
             '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
         load_assignment:
-          cluster_name: bin
+          cluster_name: envoy
           endpoints:
           - lb_endpoints:
             - endpoint:
@@ -231,8 +234,7 @@ data:
                     address: httpbin.org
                     port_value: 443
         lb_policy: ROUND_ROBIN
-
-      - name: upstream
+      - name: app1
         http2_protocol_options: {}
         connect_timeout: 
           seconds: 10
@@ -242,13 +244,13 @@ data:
           typed_config:
             '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
         load_assignment:
-          cluster_name: upstream
+          cluster_name: app1
           endpoints:
           - lb_endpoints:
             - endpoint:
                 address:
                   socket_address:
-                    address: neverssl.com
+                    address: httpbin.org
                     port_value: 443
         lb_policy: ROUND_ROBIN
 
@@ -279,6 +281,23 @@ spec:
   type: ClusterIP 
 
 ---
+apiVersion: v1 
+kind: Service 
+metadata: 
+  labels: 
+    app: envoy
+  name: app1
+  namespace: envoy
+spec: 
+  ports: 
+  - name: 8443-8443
+    port: 8443
+    protocol: TCP 
+    targetPort: 8443
+  selector: 
+    app: envoy 
+  type: ClusterIP 
+---
 
 apiVersion: v1 
 kind: Service 
@@ -295,4 +314,4 @@ spec:
     targetPort: 9901 
   selector: 
     app: envoy 
-  type: ClusterIP 
+  type: ClusterIP
