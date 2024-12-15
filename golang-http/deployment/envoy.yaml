@@ -29,11 +29,16 @@ spec:
       labels:
         app: envoy
     spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames:
+        - "envoy-1.envoy.svc.cluster.local"
+        - "envoy.envoy.svc.cluster.local"
       containers:
         - name: envoy
           image: jatrat/envoy-gateway:v0.0.13
           command: ["/usr/local/bin/envoy"]
-          args: ["--log-level", "debug" , "-c", "/etc/envoy-config/envoy.yaml"]
+          args: [ "-c", "/etc/envoy-config/envoy.yaml"]
           resources:
             requests:
               memory: "64Mi"
@@ -101,14 +106,20 @@ data:
                           route_config:
                               name: all
                               virtual_hosts:
-                                  - name: upstream
+                                  - name: envoy
                                     domains:
-                                        - "*"
+                                        - "envoy.envoy.svc.cluster.local:8443"
                                     routes:
                                         - match: { prefix: "/" }
                                           route:
-                                              cluster: upstream
-                                              prefix_rewrite: "/"
+                                              cluster: httpbin
+                                  - name: envoy-1
+                                    domains:
+                                        - "envoy-1.envoy.svc.cluster.local:8443"
+                                    routes:
+                                        - match: { prefix: "/" }
+                                          route:
+                                              cluster: nossl
                           http_filters:
                               - name: envoy.filters.http.router
                                 typed_config:
@@ -208,23 +219,42 @@ data:
         path: /var/lib/envoy/envoy-lds.yaml
    static_resources:
       clusters:
-      - name: upstream
+      - name: httpbin
         http2_protocol_options: {}
         connect_timeout: 
           seconds: 10
-        type: STRICT_DNS
+        type: LOGICAL_DNS
         transport_socket:
           name: envoy.transport_sockets.tls
           typed_config:
             '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
         load_assignment:
-          cluster_name: upstream
+          cluster_name: envoy
           endpoints:
           - lb_endpoints:
             - endpoint:
                 address:
                   socket_address:
                     address: httpbin.org
+                    port_value: 443
+        lb_policy: ROUND_ROBIN
+      - name: nossl
+        http2_protocol_options: {}
+        connect_timeout: 
+          seconds: 10
+        type: LOGICAL_DNS
+        transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        load_assignment:
+          cluster_name: envoy-1
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: neverssl.com
                     port_value: 443
         lb_policy: ROUND_ROBIN
    admin:
@@ -259,7 +289,7 @@ kind: Service
 metadata: 
   labels: 
     app: envoy 
-  name: envoy-2
+  name: envoy-1
   namespace: envoy
 spec: 
   ports: 
@@ -287,4 +317,5 @@ spec:
     targetPort: 9901 
   selector: 
     app: envoy 
-  type: ClusterIP 
+  type: ClusterIP
+  
