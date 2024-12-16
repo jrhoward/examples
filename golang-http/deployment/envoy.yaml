@@ -102,7 +102,7 @@ data:
                               issuer: https://kubernetes.default.svc.cluster.local
                               remote_jwks:
                               uri: https://192.168.49.2:8443/openid/v1/jwks
-                              cluster: app1
+                              cluster: jwks_cluster
                               timeout: 10s
                             cache_duration:
                               seconds: 300
