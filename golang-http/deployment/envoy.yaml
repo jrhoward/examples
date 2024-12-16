@@ -36,7 +36,7 @@ spec:
         - "envoy.envoy.svc.cluster.local"
       containers:
         - name: envoy
-          image: jatrat/envoy-gateway:v0.0.13
+          image: jatrat/envoy-gateway:dev-0.0.1
           command: ["/usr/local/bin/envoy"]
           args: [ "-c", "/etc/envoy-config/envoy.yaml"]
           resources:
@@ -54,7 +54,7 @@ spec:
             - name: dynamic-data
               mountPath: /var/lib/envoy/
         - name: file-watcher
-          image: jatrat/file-watch:v0.0.14
+          image: jatrat/file-watch:dev-0.0.1
           command: ["/app"]
           resources:
             requests:
@@ -99,6 +99,23 @@ data:
                   port_value: 8443
           filter_chains:
               - filters:
+                    - name: envoy.filters.http.jwt_authn
+                      typed_config:
+                        "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+                          providers:
+                            provider1:
+                              issuer: https://kubernetes.default.svc.cluster.local
+                              remote_jwks:
+                              uri: https://192.168.49.2:8443/openid/v1/jwks
+                              cluster: jwks_cluster
+                              timeout: 10s
+                            cache_duration:
+                              seconds: 300
+                          rules:
+                            - match:
+                                prefix: /
+                              requires:
+                                provider_name: provider1
                     - name: envoy.filters.network.http_connection_manager
                       typed_config:
                           "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -112,14 +129,16 @@ data:
                                     routes:
                                         - match: { prefix: "/" }
                                           route:
-                                              cluster: httpbin
+                                              cluster: envoy
+                                              prefix_rewrite: "/get"
                                   - name: envoy-1
                                     domains:
                                         - "envoy-1.envoy.svc.cluster.local:8443"
                                     routes:
                                         - match: { prefix: "/" }
                                           route:
-                                              cluster: nossl
+                                              cluster: envoy-1
+                                              prefix_rewrite: "/headers"
                           http_filters:
                               - name: envoy.filters.http.router
                                 typed_config:
@@ -219,7 +238,22 @@ data:
         path: /var/lib/envoy/envoy-lds.yaml
    static_resources:
       clusters:
-      - name: httpbin
+      - name: jwks_cluster
+        type: STRICT_DNS
+        load_assignment:
+          cluster_name: jwks_cluster
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: https://192.168.49.2:8443/openid/v1/jwks
+                    port_value: 443
+        transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+      - name: envoy
         http2_protocol_options: {}
         connect_timeout: 
           seconds: 10
@@ -238,7 +272,7 @@ data:
                     address: httpbin.org
                     port_value: 443
         lb_policy: ROUND_ROBIN
-      - name: nossl
+      - name: envoy-1
         http2_protocol_options: {}
         connect_timeout: 
           seconds: 10
@@ -288,7 +322,7 @@ apiVersion: v1
 kind: Service 
 metadata: 
   labels: 
-    app: envoy 
+    app: envoy
   name: envoy-1
   namespace: envoy
 spec: 
@@ -318,4 +352,3 @@ spec:
   selector: 
     app: envoy 
   type: ClusterIP
-  

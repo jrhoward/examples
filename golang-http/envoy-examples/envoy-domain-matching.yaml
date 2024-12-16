@@ -1,0 +1,57 @@
+# See https://github.com/envoyproxy/envoy/issues/18874
+
+- name: http.80
+  validateClusters: false
+  virtualHosts:
+    - domains:
+        - '*.example.com'
+        - '*.example.com:80'
+      includeRequestAttemptCount: true
+      name: '*.example.com:80'
+      routes:
+        - decorator:
+            operation: app2.default.svc.cluster.local:80/*
+          match:
+            prefix: /
+          metadata:
+            filterMetadata:
+              istio:
+                config: /apis/networking.istio.io/v1alpha3/namespaces/default/virtual-service/app2
+          route:
+            cluster: outbound|80||app2.default.svc.cluster.local
+            maxGrpcTimeout: 0s
+            retryPolicy:
+              hostSelectionRetryMaxAttempts: "5"
+              numRetries: 2
+              retriableStatusCodes:
+                - 503
+              retryHostPredicate:
+                - name: envoy.retry_host_predicates.previous_hosts
+              retryOn: connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes
+            timeout: 0s
+    - domains:
+        - app1.example.com
+        - app1.example.com:*
+      includeRequestAttemptCount: true
+      name: app1.example.com:80
+      routes:
+        - decorator:
+            operation: app1.default.svc.cluster.local:80/*
+          match:
+            prefix: /
+          metadata:
+            filterMetadata:
+              istio:
+                config: /apis/networking.istio.io/v1alpha3/namespaces/default/virtual-service/app1
+          route:
+            cluster: outbound|80||app1.default.svc.cluster.local
+            maxGrpcTimeout: 0s
+            retryPolicy:
+              hostSelectionRetryMaxAttempts: "5"
+              numRetries: 2
+              retriableStatusCodes:
+                - 503
+              retryHostPredicate:
+                - name: envoy.retry_host_predicates.previous_hosts
+              retryOn: connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes
+            timeout: 0s

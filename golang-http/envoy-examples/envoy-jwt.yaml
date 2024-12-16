@@ -1,0 +1,37 @@
+# See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/jwt_authn/v3/config.proto#extensions-filters-http-jwt-authn-v3-jwtauthentication
+
+providers:
+   provider1:
+     issuer: issuer1
+     audiences:
+     - audience1
+     - audience2
+     remote_jwks:
+       http_uri:
+         uri: https://example.com/.well-known/jwks.json
+         cluster: example_jwks_cluster
+         timeout: 1s
+   provider2:
+     issuer: issuer2
+     local_jwks:
+       inline_string: jwks_string
+
+rules:
+   # Not jwt verification is required for /health path
+   - match:
+       prefix: /health
+
+   # Jwt verification for provider1 is required for path prefixed with "prefix"
+   - match:
+       prefix: /prefix
+     requires:
+       provider_name: provider1
+
+   # Jwt verification for either provider1 or provider2 is required for all other requests.
+   - match:
+       prefix: /
+     requires:
+       requires_any:
+         requirements:
+           - provider_name: provider1
+           - provider_name: provider2
