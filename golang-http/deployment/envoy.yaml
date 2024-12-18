@@ -108,7 +108,7 @@ data:
                                         - match: { prefix: "/" }
                                           route:
                                               cluster: envoy
-                                              prefix_rewrite: "/get"
+                                              prefix_rewrite: "/headers"
                                   - name: envoy-1
                                     domains:
                                         - "envoy-1.envoy.svc.cluster.local:8443"
@@ -116,7 +116,6 @@ data:
                                         - match: { prefix: "/" }
                                           route:
                                               cluster: envoy-1
-                                              prefix_rewrite: "/headers"
                           http_filters:
                               - name: envoy.filters.http.router
                                 typed_config:
@@ -251,7 +250,7 @@ data:
             - endpoint:
                 address:
                   socket_address:
-                    address: neverssl.com
+                    address: httpbin.org
                     port_value: 443
         lb_policy: ROUND_ROBIN
 
